@@ -12,22 +12,31 @@ const router = express.Router();
 router.use(cors());
 
 // =========================================================
-// 🔐 1. LOAD CREDENTIALS FROM ENV VARIABLE
+// 🔐 1. LOAD CREDENTIALS FROM ENV VARIABLE (guarded)
 // =========================================================
 
-if (!process.env.DIALOGFLOW_KEY) {
-    console.error("❌ DIALOGFLOW_KEY missing in environment variables");
+let client = null;
+let CREDENTIALS = null;
+
+try {
+    if (!process.env.DIALOGFLOW_KEY || process.env.DIALOGFLOW_KEY.trim() === "") {
+        console.warn("⚠️  DIALOGFLOW_KEY is not set — Dialogflow integration disabled, Gemini fallback will be used.");
+    } else {
+        CREDENTIALS = JSON.parse(process.env.DIALOGFLOW_KEY);
+        client = new SessionsClient({
+            credentials: {
+                client_email: CREDENTIALS.client_email,
+                private_key: CREDENTIALS.private_key,
+            },
+            projectId: CREDENTIALS.project_id,
+        });
+        console.log("✅ Dialogflow client initialized.");
+    }
+} catch (err) {
+    console.error("❌ Failed to parse DIALOGFLOW_KEY — Dialogflow disabled:", err.message);
+    client = null;
+    CREDENTIALS = null;
 }
-
-const CREDENTIALS = JSON.parse(process.env.DIALOGFLOW_KEY);
-
-const client = new SessionsClient({
-    credentials: {
-        client_email: CREDENTIALS.client_email,
-        private_key: CREDENTIALS.private_key,
-    },
-    projectId: CREDENTIALS.project_id,
-});
 
 // =========================================================
 // 🤖 2. INITIALIZE GEMINI CLIENT
@@ -39,9 +48,11 @@ if (!apiKey) {
     console.error("❌ GEMINI_API_KEY missing! Please add it to Render env variables.");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-console.log(`[INIT] Gemini API Key: ${apiKey ? "Loaded" : "Not Set"}`);
+console.log(`[INIT] Gemini API Key: ${apiKey ? "Loaded ✅" : "Not Set ❌"}`);
+console.log(`[INIT] Dialogflow Client: ${client ? "Ready ✅" : "Disabled ⚠️"}`);
+
 
 // =========================================================
 // 🧠 3. GEMINI HELPER FUNCTION
@@ -104,11 +115,15 @@ router.post("/dialogflow", async (req, res) => {
         `\n[API] Received message: "${message}" for session: ${sessionId}`
     );
 
+    // Graceful degradation if services are unavailable
+    if (!genAI && !client) {
+        return res.status(503).json({ reply: "⚠️ AI service is temporarily unavailable. Please try again later." });
+    }
+
     try {
-        const sessionPath = client.projectAgentSessionPath(
-            CREDENTIALS.project_id,
-            sessionId
-        );
+        const sessionPath = client
+            ? client.projectAgentSessionPath(CREDENTIALS.project_id, sessionId)
+            : null;
 
         const request = {
             session: sessionPath,
@@ -176,18 +191,20 @@ router.post("/dialogflow", async (req, res) => {
             // =========================================================
 
             try {
-                const responses = await client.detectIntent(request);
+                if (client && sessionPath) {
+                    const responses = await client.detectIntent(request);
+                    const result = responses[0].queryResult;
+                    reply = result.fulfillmentText || "";
 
-                const result = responses[0].queryResult;
-
-                reply = result.fulfillmentText || "";
-
-                if (!reply || result.intent?.isFallback) {
+                    if (!reply || result.intent?.isFallback) {
+                        reply = await getGeminiResponseWithSearch(message);
+                    }
+                } else {
+                    // Dialogflow not configured — go straight to Gemini
                     reply = await getGeminiResponseWithSearch(message);
                 }
             } catch (dialogflowError) {
                 console.error("Dialogflow error:", dialogflowError);
-
                 reply = await getGeminiResponseWithSearch(message);
             }
         }

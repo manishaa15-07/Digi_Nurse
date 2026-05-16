@@ -31,8 +31,11 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files — never commit these
+.env
+.env.local
 .env*.local
+# .env.example is intentionally NOT ignored (safe template for contributors)
 
 # typescript
 *.tsbuildinfo

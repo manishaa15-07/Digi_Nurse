@@ -15,11 +15,21 @@ connectDB();
 
 const app = express();
 
-// Middleware
+// ============================================================
+// CORS — allowed origins from environment variable
+// On Render, set: ALLOWED_ORIGINS=https://your-app.vercel.app
+// Multiple origins: ALLOWED_ORIGINS=https://a.vercel.app,https://b.vercel.app
+// ============================================================
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : "*";
+
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 app.use(express.json());

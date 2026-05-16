@@ -1,15 +1,26 @@
 import { NativeModules, Platform } from "react-native";
 
-// 1️⃣ Environment variable (optional override)
-const envUrl = process.env.EXPO_PUBLIC_API_URL;
+// ============================================================
+// ✅ API Configuration — DigiNurse
+// ============================================================
+// Priority order:
+//   1. EXPO_PUBLIC_API_URL  (set in .env for local dev overrides)
+//   2. productionUrl        (deployed Render backend — always used in prod)
+//   3. LAN detection        (Expo Go on a real device, dev only)
+//   4. Platform emulator    (Android/iOS simulator, dev only)
+// ============================================================
 
-// 2️⃣ Production URL - Use this for deployed backend
-// const productionUrl = "https://digi-nurse.vercel.app";
+// 1️⃣ Env variable override — set EXPO_PUBLIC_API_URL=http://localhost:5000 for local dev
+const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
-const productionUrl = "http://localhost:5000"
+// 2️⃣ Deployed backend on Render
+const productionUrl = "https://digi-nurse.onrender.com";
 
-// 3️⃣ Try to detect LAN IP when running in Expo Go
+// 3️⃣ LAN IP detection for Expo Go on a physical device (dev only)
 function detectLanBaseUrl(): string | null {
+  // Skip if we already have an explicit URL
+  if (envUrl) return null;
+
   try {
     const scriptURL: string | undefined = (NativeModules as any)?.SourceCode?.scriptURL;
     if (!scriptURL) return null;
@@ -17,44 +28,43 @@ function detectLanBaseUrl(): string | null {
     const url = new URL(scriptURL);
     const host = url.hostname;
 
-    // Ignore localhost on real device
+    // Ignore loopback — doesn't work on real devices
     if (!host || host === "localhost" || host === "127.0.0.1") return null;
 
-    // Simple IP check
+    // Only accept LAN IPs (e.g. 192.168.x.x)
     const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
     if (!ipRegex.test(host)) return null;
 
-    // Your backend port is 5000
     return `http://${host}:5000`;
   } catch {
     return null;
   }
 }
 
-// 2️⃣ Platform fallback for simulator/emulator
-const platformDefault = Platform.select({
+// 4️⃣ Emulator platform fallbacks (dev only, never used in production builds)
+const emulatorDefault = Platform.select({
   android: "http://10.0.2.2:5000", // Android emulator → host machine
-  ios: "http://localhost:5000",    // iOS simulator → host machine
+  ios:     "http://localhost:5000", // iOS simulator → host machine
   default: null,
 });
 
-// 3️⃣ Always connect to local backend
+// ✅ Resolve API_BASE_URL
 export const API_BASE_URL = (() => {
-  // Detect LAN for real devices
-  const lanUrl = detectLanBaseUrl();
-  if (lanUrl) {
-    console.log("🏠 Using LAN API URL:", lanUrl);
-    return lanUrl;
+  // Highest priority: explicit env variable (use for local dev)
+  if (envUrl) {
+    console.log("🔧 [API] Using env override:", envUrl);
+    return envUrl;
   }
 
-  // Use platform default for simulator/emulator
-  if (platformDefault) {
-    console.log("📱 Using platform default API URL (emulator):", platformDefault);
-    return platformDefault;
-  }
-
-  // As fallback, just use localhost (useful if running Node on same machine)
-  const fallback = "http://localhost:5000";
-  console.log("⚠️ Falling back to localhost:", fallback);
-  return fallback;
+  // ✅ Default: always use the deployed Render backend
+  console.log("🚀 [API] Using production Render URL:", productionUrl);
+  return productionUrl;
 })();
+
+// ============================================================
+// NOTE: For local development, create DigiNurse/.env with:
+//   EXPO_PUBLIC_API_URL=http://localhost:5000          (iOS sim)
+//   EXPO_PUBLIC_API_URL=http://10.0.2.2:5000           (Android emu)
+//   EXPO_PUBLIC_API_URL=http://<your-lan-ip>:5000      (real device)
+// ============================================================
+
