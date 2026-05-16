@@ -1,0 +1,24 @@
+diff --git a/node_modules/@react-navigation/core/lib/module/useRegisterNavigator.js b/node_modules/@react-navigation/core/lib/module/useRegisterNavigator.js
+index 987f9a3..ad27ecf 100644
+--- a/node_modules/@react-navigation/core/lib/module/useRegisterNavigator.js
++++ b/node_modules/@react-navigation/core/lib/module/useRegisterNavigator.js
+@@ -1,15 +1,17 @@
+ "use strict";
+ 
+-import { nanoid } from 'nanoid/non-secure';
+ import * as React from 'react';
+ import { SingleNavigatorContext } from "./EnsureSingleNavigator.js";
+ 
++// Simple ID generator to replace nanoid
++const generateId = () => Math.random().toString(36).substr(2, 9);
++
+ /**
+  * Register a navigator in the parent context (either a navigation container or a screen).
+  * This is used to prevent multiple navigators under a single container or screen.
+  */
+ export function useRegisterNavigator() {
+-  const [key] = React.useState(() => nanoid());
++  const [key] = React.useState(() => generateId());
+   const container = React.useContext(SingleNavigatorContext);
+   if (container === undefined) {
+     throw new Error("Couldn't register the navigator. Have you wrapped your app with 'NavigationContainer'?\n\nThis can also happen if there are multiple copies of '@react-navigation' packages installed.");
