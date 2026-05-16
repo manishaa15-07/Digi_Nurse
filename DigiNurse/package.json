@@ -56,7 +56,6 @@
   },
   "devDependencies": {
     "@react-native-community/cli": "^20.0.2",
-    "@types/axios": "^0.9.36",
     "@types/react": "~19.1.0",
     "@types/react-native-calendars": "^1.1264.7",
     "@types/react-native-elements": "^0.16.4",

@@ -43,12 +43,12 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error: any) => Promise.reject(error)
 );
 
 // ── Response interceptor: normalize error messages ───────────────────────────
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response: any) => response,
   (error: any) => {
     if (error.code === "ECONNABORTED") {
       // Timeout — typically Render cold start on free tier
