@@ -64,10 +64,7 @@
 | 📅 **Appointment Calendar** | Visual scheduling interface for doctor appointments |
 | 🚨 **SOS Alerts** | One-tap emergency alert system with caretaker notification |
 | 💬 **Real-time Chat** | Socket.IO powered messaging between patients and caretakers |
-| 🔔 **Push Notifications** | Real-time alert delivery for health events |
-| 🌐 **Health FAQ Engine** | Curated responses for common health questions |
 | 🔐 **Secure Auth** | JWT-based authentication with role-based access control |
-| 📦 **Offline-Aware** | Graceful degradation with meaningful error messages on network failure |
 
 ---
 
