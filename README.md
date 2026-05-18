@@ -575,25 +575,6 @@ npx expo start --clear
 
 ---
 
-## 🤝 Contributing
-
-Contributions are what make open source amazing. Any contributions you make are **greatly appreciated**.
-
-1. **Fork** the repository
-2. **Create** your feature branch
-   ```bash
-   git checkout -b feature/AmazingFeature
-   ```
-3. **Commit** your changes
-   ```bash
-   git commit -m 'feat: add AmazingFeature'
-   ```
-4. **Push** to the branch
-   ```bash
-   git push origin feature/AmazingFeature
-   ```
-5. **Open** a Pull Request
-
 ### Commit Convention
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/):
@@ -609,11 +590,6 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ---
 
-## 📄 License
-
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
-
----
 
 ## 👩‍💻 Author
 
